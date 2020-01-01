@@ -6,7 +6,7 @@
 #################################################################################
 import pygame,random,threading
 import os,time
-
+import csv
 #################################################################################
 ###                                                                           ###
 ###                              ### 初始區 ###                                ###
@@ -18,7 +18,7 @@ pygame.display.set_caption("哎呀快要滑倒啦")
 ###                                                                           ###
 ###                              ### 全域變數區 ###                            ###
 #################################################################################
-
+songselect = 'Ikimono Gakari - Blue Bird (TV Size)'
 WIN_WIDTH, WIN_HEIGHT = 1280, 720    #螢幕大小
 FRAME_PER_SECONDS = 144               #最大幀數(通常不準的啦)
 win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
@@ -26,6 +26,7 @@ clock = pygame.time.Clock()
 img_base_path = os.getcwd() + '/images/'
 sound_base_path = os.getcwd() + '/sounds/'
 font_base_path = os.getcwd() + '/fonts/'
+song_base_path = os.getcwd() + '/song/' + songselect + '/'
 run = True #遊戲開始
 screen1,screen2,screen3,switch = True,False,False,True #畫面切換
 left,right=True,False
@@ -40,6 +41,7 @@ combo = 0
 copyarr = []
 clickanimation = False
 touchflag = False
+
 #################################################################################
 ###                                                                           ###
 ###                              ### 圖片區 ###                                ###
@@ -61,7 +63,7 @@ catchright = pygame.transform.scale(pygame.image.load(img_base_path + 'catchrigh
 
 #背景
 bg = pygame.transform.scale(pygame.image.load(img_base_path + 'menu-background.jpg'),(WIN_WIDTH,WIN_HEIGHT)).convert_alpha()
-bg1 = pygame.transform.scale(pygame.image.load(img_base_path + 'bg1.jpg'),(WIN_WIDTH,WIN_HEIGHT)).convert_alpha()
+bg1 = pygame.transform.scale(pygame.image.load(song_base_path + 'bg1.jpg'),(WIN_WIDTH,WIN_HEIGHT)).convert_alpha()
 bg2 = pygame.transform.scale(pygame.image.load(img_base_path + 'bg2.jpg'),(WIN_WIDTH,WIN_HEIGHT)).convert_alpha()
 
 #screen1的圖
@@ -80,7 +82,7 @@ retry = pygame.image.load(img_base_path + 'pause-retry.png').convert_alpha()
 menuhit = pygame.mixer.Sound(sound_base_path + 'menuhit.wav')  #滑鼠點擊音效
 menutouch = pygame.mixer.Sound(sound_base_path + 'menutouch.wav') #滑鼠觸碰音效
 objhit = pygame.mixer.Sound(sound_base_path + 'normal-hitwhistle.wav') #打擊音效
-objhit.set_volume(0.4)
+objhit.set_volume(0.7)
 #################################################################################
 ###                                                                           ###
 ###                              ### 文字區 ###                                ###
@@ -99,8 +101,7 @@ intro3 = chinese.render('接住落下的方塊',True,(0,0,0))
 intro4 = chinese.render('享受愉快的節奏!',True,(0,0,0))
 
 #歌曲名稱
-songname = chinese.render('Reona - Niji no Kanata ni',True,(225,225,225))
-
+songname = chinese.render(songselect,True,(225,225,225))
 #################################################################################
 ###                                                                           ###
 ###                              ### 精靈類別區 ###                            ###
@@ -146,7 +147,7 @@ class obj(pygame.sprite.Sprite):
             self.image = obj3[0]
             self.select = 3
         self.rect = self.image.get_rect()
-        self.rect.centerx = random.randrange(400,800)
+        self.rect.centerx = random.randrange(500,700)
         self.rect.centery = -20
         self.mask = pygame.mask.from_surface(self.image)
     def update(self,objspeed):
@@ -195,7 +196,7 @@ def redrawGameWindow():
         #切換畫面
         if switch:
             switch = False
-            playmusic('bgm.mp3',0.2)
+            playmusic('bgm.mp3',False,0.2)
         win.blit(bg, (0, 0))
         win.blit(fps,(1150,0))
         win.blit(intro1,(125,100))
@@ -231,7 +232,7 @@ def redrawGameWindow():
             counter = 0
             score = 0
             combo = 0
-            playmusic('audio.mp3',1)
+            playmusic('audio.mp3',True,0.1)
             now = time.time() #音樂撥放時開始計時
             copyarr = arr.copy()
             t.running.set()           #另一執行序開始產生物件
@@ -254,7 +255,7 @@ def redrawGameWindow():
     if screen3:
         if switch:
             switch = False
-            playmusic('transfer.mp3',0.7)
+            playmusic('transfer.mp3',False,0.7)
         printscore = chinese3.render(str(score),True,(100,100,100))
         printcombo = chinese3.render(str(combo),True,(100,100,100))
         win.blit(bg2,(0,0))
@@ -285,9 +286,12 @@ def redrawGameWindow():
 ###                          ### 其他函數 ###                                  ###
 #################################################################################
 
-#播放音樂函式(音檔名稱(string),音量(0~1))
-def playmusic(musicname,volume):
-    pygame.mixer.music.load(sound_base_path + musicname)
+#播放音樂函式(音檔名稱(string),是否為所選歌曲,音量(0~1))
+def playmusic(musicname,songbase,volume):
+    if songbase == False:
+        pygame.mixer.music.load(sound_base_path + musicname)
+    else:
+        pygame.mixer.music.load(song_base_path + musicname)
     pygame.mixer.music.set_volume(volume)
     pygame.mixer.music.play()
 
@@ -308,39 +312,12 @@ def detectCollisions(x1, y1, w1, h1, x2, y2, w2, h2):
 ###                                                                           ###
 ###                          ### 墜落物生成時間區 ###                          ###
 #################################################################################
-arr = [8.378,8.69,9.007,9.608,9.92,10.249,10.88,11.196,11.821,12.446,
-13.375,13.687,14,14.604,14.916,15.229,15.854,16.166,16.789,17.401,18.356,
-18.685,18.93,19.59,19.909,20.228,20.846,21.134,21.463,21.772,22.091,
-22.423,23.401,23.72,23.995,24.626,24.99,25.273,25.903,26.219,26.377,
-26.523,26.826,27.103,27.432,27.735,28.341,28.644,28.947,29.256,29.565,
-29.874,30.184,30.802,31.146,31.42,31.778,32.097,32.416,33.054,33.334,
-33.654,33.973,34.586,34.892,34.586,34.892,35.207,35.81,36.116,36.422,
-36.736,37.05,37.364,37.678,38.306,38.62,38.778,38.935,39.226,39.517,
-39.823,40.129,40.747,41.056,41.211,41.365,41.671,41.977,42.283,43.201,
-43.507,43.813,44.116,44.419,44.734,45.025,45.328,45.631,45.934,46.085,
-46.237,46.543,46.849,47.138,47.444,48.056,48.685,49.612,49.922,50.231,
-50.849,51.159,51.465,52.103,52.409,52.728,53.606,54.536,54.842,55.913,
-57.602,57.921,58.241,58.56,58.864,59.129,59.518,59.853,60.119,60.445,
-60.757,60.996,61.323,61.635,61.91,62.519,62.823,63.128,63.28,63.432,
-63.742,64.051,64.36,64.67,64.979,65.279,65.729,65.881,66.214,66.547,
-66.814,67.396,67.693,68.026,68.305,68.456,68.608,68.911,69.248,69.554,
-69.86,70.166,70.472,70.728,71.06,71.339,71.679,72.02,72.292,72.601,
-72.91,73.141,73.744,74.045,74.347,74.648,74.95,75.251,75.553,75.856,
-76.159,76.462,77.068,77.371,77.674,77.825,77.977,78.277,78.577,78.877,
-79.477,79.777,80.077,80.227,80.377,80.683,80.989,81.295,81.907,82.06,
-82.366,82.519,82.672,82.825,83.477,83.777,84.065,84.365,84.665,84.965,
-85.249,85.552,85.855,86.158,86.764,87.067,87.37,87.682,87.994,88.316,
-88.628,88.941,89.253,89.553,89.882,90.191,90.513,90.836,91.14,91.457,
-91.774,92.409,92.764,93.37,93.673,93.976,94.279,94.57,94.897,95.206,
-95.515,95.83,96.146,96.429,96.712,97.006,97.3,97.615,97.931,98.247,
-98.547,98.847,99.127,99.421,99.715,100.037,100.346,101.908,102.217,
-102.363,102.509,102.809,103.108,103.406,103.719,104.37,105,105.31,
-105.623,105.96,106.619,106.904,107.213,107.498,107.808,108.118,108.438,
-108.738,109.368,109.678,109.829,109.981,110.292,110.602,110.912,111.219,
-111.539,111.84,112.157,112.461,113.086,113.398,113.711,114.336,114.676,
-114.973,115.288,115.604,115.92,116.236,116.551,116.836,117.481,118.087,
-118.39,118.541,118.693,119.299]
-
+arr = []
+with open(song_base_path + 'map.kuanmin', newline='') as csvfile:
+    rows = csv.reader(csvfile)
+    for row in rows:
+        arr = row.copy()
+arr[:] = [float(x) for x in arr]
 #################################################################################
 ###                                                                           ###
 ###                          ### 執行序區 ###                                  ###
