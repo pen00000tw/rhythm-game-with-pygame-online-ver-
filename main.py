@@ -18,7 +18,7 @@ pygame.display.set_caption("哎呀快要滑倒啦")
 ###                                                                           ###
 ###                              ### 全域變數區 ###                            ###
 #################################################################################
-songselect = 'Ikimono Gakari - Blue Bird (TV Size)'
+songselect = 'fripSide - only my railgun (TV size)'
 WIN_WIDTH, WIN_HEIGHT = 1280, 720    #螢幕大小
 FRAME_PER_SECONDS = 144               #最大幀數(通常不準的啦)
 win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
