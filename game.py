@@ -8,26 +8,31 @@ import pygame,random,threading
 import os,time
 import csv
 import mutagen.mp3
+
 #################################################################################
 ###                                                                           ###
 ###                              ### 初始區 ###                                ###
 #################################################################################
-pygame.mixer.init(44100,-16,2,1024)    #(頻率,位元,通道數,緩衝)
-pygame.init()
-pygame.display.set_caption("哎呀快要滑倒啦")
+def initgame():
+    pygame.mixer.init(44100,-16,2,1024)    #(頻率,位元,通道數,緩衝)
+    pygame.init()
+    pygame.display.set_caption("哎呀快要滑倒啦")
 #################################################################################
 ###                                                                           ###
 ###                              ### 全域變數區 ###                            ###
 #################################################################################
-songselect = 'LiSA - Gurenge (TV Size)'
+def pygamedef(inputsong):
+    global songselect,win,clock,song_base_path
+    songselect = inputsong
+    win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+    clock = pygame.time.Clock()
+    song_base_path = os.getcwd() + '/song/' + songselect + '/'
+
 WIN_WIDTH, WIN_HEIGHT = 1280, 720    #螢幕大小
 FRAME_PER_SECONDS = 144               #最大幀數(通常不準的啦)
-win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
-clock = pygame.time.Clock()
 img_base_path = os.getcwd() + '/images/'
 sound_base_path = os.getcwd() + '/sounds/'
 font_base_path = os.getcwd() + '/fonts/'
-song_base_path = os.getcwd() + '/song/' + songselect + '/'
 run = True #遊戲開始
 screen1,screen2,screen3,switch = True,False,False,True #畫面切換
 left,right=True,False
@@ -42,67 +47,72 @@ combo = 0
 copyarr = []
 clickanimation = False
 touchflag = False
-
+arr = []
+fall = []  
 #################################################################################
 ###                                                                           ###
 ###                              ### 圖片區 ###                                ###
 #################################################################################
-#動畫區
-click = []  #按鍵動畫
-obj1 = []   #下墜物件1
-obj2 = []   #下墜物件2
-obj3 = []   #下墜物件3
-for i in range(30):
-    click.append(pygame.image.load(img_base_path + 'taiko-hit300k-' + str(i) + '.png'))
-    obj1.append(pygame.transform.scale(pygame.image.load(img_base_path + 'hit100-' + str(i) +'.png'),(400,400)).convert_alpha())
-    obj2.append(pygame.transform.scale(pygame.image.load(img_base_path + 'hit50-' + str(i) +'.png'),(400,400)).convert_alpha())
-    obj3.append(pygame.transform.scale(click[i],(400,400)).convert_alpha())
+def picturedef():
+    global click,obj1,obj2,obj3,catchleft,catchright,bg,bg1,bg2,start,end,rankingpanel,rank,retry,img_base_path,song_base_path
+    #動畫區
+    click = []  #按鍵動畫
+    obj1 = []   #下墜物件1
+    obj2 = []   #下墜物件2
+    obj3 = []   #下墜物件3
+    for i in range(30):
+        click.append(pygame.image.load(img_base_path + 'taiko-hit300k-' + str(i) + '.png'))
+        obj1.append(pygame.transform.scale(pygame.image.load(img_base_path + 'hit100-' + str(i) +'.png'),(400,400)).convert_alpha())
+        obj2.append(pygame.transform.scale(pygame.image.load(img_base_path + 'hit50-' + str(i) +'.png'),(400,400)).convert_alpha())
+        obj3.append(pygame.transform.scale(click[i],(400,400)).convert_alpha())
 
-#角色
-catchleft = pygame.transform.scale(pygame.image.load(img_base_path + 'catchleft.png'),(193,208)).convert_alpha()
-catchright = pygame.transform.scale(pygame.image.load(img_base_path + 'catchright.png'),(193,208)).convert_alpha()
+    #角色
+    catchleft = pygame.transform.scale(pygame.image.load(img_base_path + 'catchleft.png'),(193,208)).convert_alpha()
+    catchright = pygame.transform.scale(pygame.image.load(img_base_path + 'catchright.png'),(193,208)).convert_alpha()
 
-#背景
-bg = pygame.transform.scale(pygame.image.load(img_base_path + 'menu-background.jpg'),(WIN_WIDTH,WIN_HEIGHT)).convert_alpha()
-bg1 = pygame.transform.scale(pygame.image.load(song_base_path + 'bg1.jpg'),(WIN_WIDTH,WIN_HEIGHT)).convert_alpha()
-bg2 = pygame.transform.scale(pygame.image.load(img_base_path + 'bg2.jpg'),(WIN_WIDTH,WIN_HEIGHT)).convert_alpha()
+    #背景
+    bg = pygame.transform.scale(pygame.image.load(img_base_path + 'menu-background.jpg'),(WIN_WIDTH,WIN_HEIGHT)).convert_alpha()
+    bg1 = pygame.transform.scale(pygame.image.load(song_base_path + 'bg1.jpg'),(WIN_WIDTH,WIN_HEIGHT)).convert_alpha()
+    bg2 = pygame.transform.scale(pygame.image.load(img_base_path + 'bg2.jpg'),(WIN_WIDTH,WIN_HEIGHT)).convert_alpha()
 
-#screen1的圖
-start = pygame.image.load(img_base_path + 'start.png').convert_alpha()
-end = pygame.transform.scale(pygame.image.load(img_base_path + 'end.png'),(104,65)).convert_alpha()
+    #screen1的圖
+    start = pygame.image.load(img_base_path + 'start.png').convert_alpha()
+    end = pygame.transform.scale(pygame.image.load(img_base_path + 'end.png'),(104,65)).convert_alpha()
 
-#screen3的圖
-rankingpanel = pygame.image.load(img_base_path + 'ranking-panel old.png').convert_alpha()
-rank = pygame.transform.scale(pygame.image.load(img_base_path + 'ranking-XH.png'),(185,222)).convert_alpha()
-retry = pygame.image.load(img_base_path + 'pause-retry.png').convert_alpha()
+    #screen3的圖
+    rankingpanel = pygame.image.load(img_base_path + 'ranking-panel old.png').convert_alpha()
+    rank = pygame.transform.scale(pygame.image.load(img_base_path + 'ranking-XH.png'),(185,222)).convert_alpha()
+    retry = pygame.image.load(img_base_path + 'pause-retry.png').convert_alpha()
 
 #################################################################################
 ###                                                                           ###
 ###                              ### 音檔區 ###                                ###
 #################################################################################
-menuhit = pygame.mixer.Sound(sound_base_path + 'menuhit.wav')  #滑鼠點擊音效
-menutouch = pygame.mixer.Sound(sound_base_path + 'menutouch.wav') #滑鼠觸碰音效
-objhit = pygame.mixer.Sound(sound_base_path + 'normal-hitwhistle.wav') #打擊音效
-objhit.set_volume(0.7)
+def musicdef():
+    global menuhit,menutouch,objhit,sound_base_path
+    menuhit = pygame.mixer.Sound(sound_base_path + 'menuhit.wav')  #滑鼠點擊音效
+    menutouch = pygame.mixer.Sound(sound_base_path + 'menutouch.wav') #滑鼠觸碰音效
+    objhit = pygame.mixer.Sound(sound_base_path + 'normal-hitwhistle.wav') #打擊音效
+    objhit.set_volume(0.7)
 #################################################################################
 ###                                                                           ###
 ###                              ### 文字區 ###                                ###
 #################################################################################
+def fontdef(songselect):
+    global font,font1,chinese,chinese3,intro1,intro2,intro3,intro4,songname,font_base_path
+    #字型大小設定
+    font = pygame.font.Font(font_base_path + "1900805.ttf",72)
+    font1 = pygame.font.Font(font_base_path + "1900805.ttf",24)
+    chinese = pygame.font.Font(font_base_path + "KTEGAKI.ttf",24)
+    chinese3 = pygame.font.Font(font_base_path + "KTEGAKI.ttf",96)
 
-#字型大小設定
-font = pygame.font.Font(font_base_path + "1900805.ttf",72)
-font1 = pygame.font.Font(font_base_path + "1900805.ttf",24)
-chinese = pygame.font.Font(font_base_path + "KTEGAKI.ttf",24)
-chinese3 = pygame.font.Font(font_base_path + "KTEGAKI.ttf",96)
-
-#生成文字圖片
-intro1 = chinese.render('Game introduce:' +'',True,(0,0,0))
-intro2 = chinese.render('以左右移動人物',True,(0,0,0))
-intro3 = chinese.render('接住落下的方塊',True,(0,0,0))
-intro4 = chinese.render('享受愉快的節奏!',True,(0,0,0))
-
-#歌曲名稱
-songname = chinese.render(songselect,True,(225,225,225))
+    #生成文字圖片
+    intro1 = chinese.render('Game introduce:' +'',True,(0,0,0))
+    intro2 = chinese.render('以左右移動人物',True,(0,0,0))
+    intro3 = chinese.render('接住落下的方塊',True,(0,0,0))
+    intro4 = chinese.render('享受愉快的節奏!',True,(0,0,0))
+    #歌曲名稱
+    songname = chinese.render(songselect,True,(225,225,225))
 #################################################################################
 ###                                                                           ###
 ###                              ### 精靈類別區 ###                            ###
@@ -172,18 +182,23 @@ class obj(pygame.sprite.Sprite):
         else:
             group1.remove(self)
                 
-#精靈初始化        
-character = Mysprite(win)
-group = pygame.sprite.Group()  #人物群組
-group1 = pygame.sprite.Group()  #掉落物群組
+#精靈初始化
+def spriteinit():
+    global character,group,group1,win
+    character = Mysprite(win)
+    group = pygame.sprite.Group()  #人物群組
+    group1 = pygame.sprite.Group()  #掉落物群組
 #生成掉落物
-fall = []  
-for i in range(objnum):
-    fall.append(obj(win))
-    fall[i].load((i % 3) + 1)
+def falldef():
+    global objnum,fall,win
+    for i in range(objnum):
+        fall.append(obj(win))
+        fall[i].load((i % 3) + 1)
 #人物load
-character.load(catchright)
-group.add(character)
+def characterload():
+    global character,group,catchright
+    character.load(catchright)
+    group.add(character)
 
 #################################################################################
 ###                                                                           ###
@@ -319,12 +334,13 @@ def detectCollisions(x1, y1, w1, h1, x2, y2, w2, h2):
 ###                                                                           ###
 ###                          ### 墜落物生成時間區 ###                          ###
 #################################################################################
-arr = []
-with open(song_base_path + 'map.kuanmin', newline='') as csvfile:
-    rows = csv.reader(csvfile)
-    for row in rows:
-        arr = row.copy()
-arr[:] = [float(x) for x in arr]
+def general():
+    global arr
+    with open(song_base_path + 'map.kuanmin', newline='') as csvfile:
+        rows = csv.reader(csvfile)
+        for row in rows:
+            arr = row.copy()
+    arr[:] = [float(x) for x in arr]
 #################################################################################
 ###                                                                           ###
 ###                          ### 執行序區 ###                                  ###
@@ -350,121 +366,140 @@ class que(threading.Thread):
                 group1.add(fall[counter])
                 del copyarr[0]
                 counter += 1
-t = que()
-t.start()
+def startque():
+    global t
+    t = que()
+    t.start()
 #################################################################################
 ###                                                                           ###
 ###                          ### 主程式區 ###                                  ###
 #################################################################################
-while run:
-    clock.tick(FRAME_PER_SECONDS)
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            run = False
-    keys = pygame.key.get_pressed()
-    mousep = pygame.mouse.get_pressed()
-    #開始畫面判斷
-    if screen1 == True: 
-        if mousep[0] == True:
-            menuhit.play()
-            clickanimation = True
-        else:
-            clickanimation = False
-        if detectCollisions(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],8,8,10,585,104,65):
-            if touchflag == False:
-                touchflag =True
-                menutouch.play()
-            end = pygame.transform.scale(pygame.image.load(img_base_path + 'end.png'),(114,75)).convert_alpha()
-            if mousep[0] == True:
-                pygame.mixer.music.fadeout(2000)
+def main(inputsong,username):
+    #輸入歌曲
+    print(inputsong)
+    print(username)
+    global run,clickanimation,switch,left,right,charactermul,screen1,screen2,screen3,start,end,retry,score,touchflag
+    initgame()
+    pygamedef(inputsong)
+    picturedef()
+    musicdef()
+    fontdef(inputsong)
+    spriteinit()
+    falldef()
+    characterload()
+    general()
+    startque()
+    while run:
+        clock.tick(FRAME_PER_SECONDS)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 run = False
-        elif detectCollisions(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],8,8,1050,500,208,134):
-            if touchflag == False:
-                touchflag = True
-                menutouch.play()
-            start = pygame.transform.scale(pygame.image.load(img_base_path + 'start.png'),(218,144)).convert_alpha()
+        keys = pygame.key.get_pressed()
+        mousep = pygame.mouse.get_pressed()
+        #開始畫面判斷
+        if screen1 == True: 
             if mousep[0] == True:
-                for i in range(30):
-                    clickfps = font1.render('FPS:' + str(int(clock.get_fps())),True,(0,0,0))
-                    clock.tick(60)
-                    win.blit(bg, (0, 0))
-                    win.blit(clickfps,(1150,0))
-                    win.blit(intro1,(125,100))
-                    win.blit(intro2,(125,150))
-                    win.blit(intro3,(125,200))
-                    win.blit(intro4,(125,250))
-                    win.blit(start,(1050,500))
-                    win.blit(end,(10,585))
-                    win.blit(click[i % 30],(pygame.mouse.get_pos()[0] - 400,pygame.mouse.get_pos()[1] - 400))
-                    pygame.display.update()
+                menuhit.play()
+                clickanimation = True
+            else:
                 clickanimation = False
-                screen1 = False
-                screen2 = True
-                screen3 = False
-                switch = True
-                pygame.mixer.music.fadeout(2000)
-                
-        else:
-            touchflag = False
-            end = pygame.transform.scale(pygame.image.load(img_base_path + 'end.png'),(104,65)).convert_alpha()
-            start = pygame.image.load(img_base_path + 'start.png').convert_alpha()
-    #遊戲中
-    elif screen2 == True:
-        if keys[pygame.K_LEFT]:
-            left = True
-            right = False
-        elif keys[pygame.K_RIGHT]:
-            left = False
-            right = True
-        else:
-            left = False
-            right = False
-        if keys[pygame.K_LSHIFT]:
-            charactermul = 1500
-        else:
-            charactermul = 750
-        tmp = pygame.sprite.spritecollide(character,group1,False,pygame.sprite.collide_mask)
-        if tmp:
-            for i in tmp:
-                score += 100
-                i.burst = True
-    elif screen3 == True:
-        if mousep[0] == True:
-            clickanimation = True
-            menuhit.play()
+            if detectCollisions(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],8,8,10,585,104,65):
+                if touchflag == False:
+                    touchflag =True
+                    menutouch.play()
+                end = pygame.transform.scale(pygame.image.load(img_base_path + 'end.png'),(114,75)).convert_alpha()
+                if mousep[0] == True:
+                    pygame.mixer.music.fadeout(2000)
+                    run = False
+            elif detectCollisions(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],8,8,1050,500,208,134):
+                if touchflag == False:
+                    touchflag = True
+                    menutouch.play()
+                start = pygame.transform.scale(pygame.image.load(img_base_path + 'start.png'),(218,144)).convert_alpha()
+                if mousep[0] == True:
+                    for i in range(30):
+                        clickfps = font1.render('FPS:' + str(int(clock.get_fps())),True,(0,0,0))
+                        clock.tick(60)
+                        win.blit(bg, (0, 0))
+                        win.blit(clickfps,(1150,0))
+                        win.blit(intro1,(125,100))
+                        win.blit(intro2,(125,150))
+                        win.blit(intro3,(125,200))
+                        win.blit(intro4,(125,250))
+                        win.blit(start,(1050,500))
+                        win.blit(end,(10,585))
+                        win.blit(click[i % 30],(pygame.mouse.get_pos()[0] - 400,pygame.mouse.get_pos()[1] - 400))
+                        pygame.display.update()
+                    clickanimation = False
+                    screen1 = False
+                    screen2 = True
+                    screen3 = False
+                    switch = True
+                    pygame.mixer.music.fadeout(2000)
+                    
+            else:
+                touchflag = False
+                end = pygame.transform.scale(pygame.image.load(img_base_path + 'end.png'),(104,65)).convert_alpha()
+                start = pygame.image.load(img_base_path + 'start.png').convert_alpha()
+        #遊戲中
+        elif screen2 == True:
+            if keys[pygame.K_LEFT]:
+                left = True
+                right = False
+            elif keys[pygame.K_RIGHT]:
+                left = False
+                right = True
+            else:
+                left = False
+                right = False
+            if keys[pygame.K_LSHIFT]:
+                charactermul = 1500
+            else:
+                charactermul = 750
+            tmp = pygame.sprite.spritecollide(character,group1,False,pygame.sprite.collide_mask)
+            if tmp:
+                for i in tmp:
+                    score += 100
+                    i.burst = True
+        elif screen3 == True:
+            if mousep[0] == True:
+                clickanimation = True
+                menuhit.play()
+            else:
+                clickanimation = False
+            if detectCollisions(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],8,8,1150,450,83,85):
+                if touchflag == False:
+                    touchflag = True
+                    menutouch.play()
+                retry = pygame.transform.scale(pygame.image.load(img_base_path + 'pause-retry.png'),(113,97)).convert_alpha()
+                if mousep[0] == True:
+                    printscore = chinese3.render(str(score),True,(100,100,100))
+                    printcombo = chinese3.render(str(combo),True,(100,100,100))
+                    for i in range(30):
+                        clock.tick(60)
+                        clickfps = font1.render('FPS:' + str(int(clock.get_fps())),True,(0,0,0))
+                        win.blit(bg2,(0,0))
+                        win.blit(clickfps,(1150,0))
+                        win.blit(rankingpanel,(0,0))
+                        win.blit(printscore,(75,70))
+                        win.blit(printcombo,(75,450))
+                        win.blit(rank,(405,415))
+                        win.blit(songname,(73,640))
+                        win.blit(retry,(1150,450))
+                        win.blit(click[i % 30],(pygame.mouse.get_pos()[0] - 400,pygame.mouse.get_pos()[1] - 400))
+                        pygame.display.update()
+                    clickanimation = False
+                    screen1 = True
+                    screen2 = False
+                    screen3 = False
+                    switch = True
+                    pygame.mixer.music.fadeout(2000)
+            else:
+                retry = pygame.image.load(img_base_path + 'pause-retry.png').convert_alpha()
+                touchflag = False
         else:
             clickanimation = False
-        if detectCollisions(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],8,8,1150,450,83,85):
-            if touchflag == False:
-                touchflag = True
-                menutouch.play()
-            retry = pygame.transform.scale(pygame.image.load(img_base_path + 'pause-retry.png'),(113,97)).convert_alpha()
-            if mousep[0] == True:
-                printscore = chinese3.render(str(score),True,(100,100,100))
-                printcombo = chinese3.render(str(combo),True,(100,100,100))
-                for i in range(30):
-                    clock.tick(60)
-                    clickfps = font1.render('FPS:' + str(int(clock.get_fps())),True,(0,0,0))
-                    win.blit(bg2,(0,0))
-                    win.blit(clickfps,(1150,0))
-                    win.blit(rankingpanel,(0,0))
-                    win.blit(printscore,(75,70))
-                    win.blit(printcombo,(75,450))
-                    win.blit(rank,(405,415))
-                    win.blit(songname,(73,640))
-                    win.blit(retry,(1150,450))
-                    win.blit(click[i % 30],(pygame.mouse.get_pos()[0] - 400,pygame.mouse.get_pos()[1] - 400))
-                    pygame.display.update()
-                clickanimation = False
-                screen1 = True
-                screen2 = False
-                screen3 = False
-                switch = True
-                pygame.mixer.music.fadeout(2000)
-        else:
-            retry = pygame.image.load(img_base_path + 'pause-retry.png').convert_alpha()
-            touchflag = False
-    else:
-        clickanimation = False
-    redrawGameWindow()        
-pygame.quit()
+        redrawGameWindow()        
+    pygame.quit()
+if __name__ == "__main__":
+    main('','')
