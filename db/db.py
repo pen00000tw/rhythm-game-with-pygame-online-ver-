@@ -28,5 +28,30 @@ def user_register(tup):
     try:
         SQL = "INSERT INTO player(user_id,user_name,password) VALUES(%s,%s,%s)"
         cursor.execute(SQL,tup)
+        con.commit()
     except mysql.connector.Error as err:
         return False
+def rank(tup):
+    try:
+        SQL = "select * FROM record WHERE songname=%s ORDER BY score DESC"
+        cursor.execute(SQL,(tup,))
+        return (cursor.fetchall())
+    except mysql.connector.Error as err:
+        return False
+def record(tup):
+    try:
+        SQL = "select * FROM record WHERE name=%s ORDER BY date DESC"
+        cursor.execute(SQL,(tup,))
+        return (cursor.fetchall())
+    except mysql.connector.Error as err:
+        return False
+def writerecord(tup):
+    try:
+        print(tup)
+        SQL = "INSERT INTO record(name,score,songname) VALUES(%s,%s,%s)"
+        cursor.execute(SQL,tup)
+        con.commit()
+    except mysql.connector.Error as err:
+        print(err)
+        return False
+

@@ -8,7 +8,7 @@ import pygame,random,threading
 import os,time
 import csv
 import mutagen.mp3
-
+import db.db
 #################################################################################
 ###                                                                           ###
 ###                              ### 初始區 ###                                ###
@@ -49,12 +49,16 @@ clickanimation = False
 touchflag = False
 arr = []
 fall = []  
+dirPath = os.getcwd() + '/song'
+songlist = [f for f in os.listdir(dirPath) if os.path.isdir(os.path.join(dirPath, f))] #歌曲列表
+songindex = 0
+input1 = ''
 #################################################################################
 ###                                                                           ###
 ###                              ### 圖片區 ###                                ###
 #################################################################################
 def picturedef():
-    global click,obj1,obj2,obj3,catchleft,catchright,bg,bg1,bg2,start,end,rankingpanel,rank,retry,img_base_path,song_base_path
+    global click,obj1,obj2,obj3,catchleft,catchright,bg,bg1,bg2,start,end,rankingpanel,rank,retry,img_base_path,song_base_path,selectright
     #動畫區
     click = []  #按鍵動畫
     obj1 = []   #下墜物件1
@@ -78,7 +82,7 @@ def picturedef():
     #screen1的圖
     start = pygame.image.load(img_base_path + 'start.png').convert_alpha()
     end = pygame.transform.scale(pygame.image.load(img_base_path + 'end.png'),(104,65)).convert_alpha()
-
+    selectright = pygame.image.load(img_base_path + 'selectright.png').convert_alpha()
     #screen3的圖
     rankingpanel = pygame.image.load(img_base_path + 'ranking-panel old.png').convert_alpha()
     rank = pygame.transform.scale(pygame.image.load(img_base_path + 'ranking-XH.png'),(185,222)).convert_alpha()
@@ -99,7 +103,7 @@ def musicdef():
 ###                              ### 文字區 ###                                ###
 #################################################################################
 def fontdef(songselect):
-    global font,font1,chinese,chinese3,intro1,intro2,intro3,intro4,songname,font_base_path
+    global font,font1,chinese,chinese3,intro1,intro2,intro3,intro4,songname,font_base_path,songname1
     #字型大小設定
     font = pygame.font.Font(font_base_path + "1900805.ttf",72)
     font1 = pygame.font.Font(font_base_path + "1900805.ttf",24)
@@ -113,6 +117,7 @@ def fontdef(songselect):
     intro4 = chinese.render('享受愉快的節奏!',True,(0,0,0))
     #歌曲名稱
     songname = chinese.render(songselect,True,(225,225,225))
+    songname1 = chinese.render('Song Select: ' + songselect,True,(0,0,0))
 #################################################################################
 ###                                                                           ###
 ###                              ### 精靈類別區 ###                            ###
@@ -206,7 +211,7 @@ def characterload():
 #################################################################################
 #主渲染函式
 def redrawGameWindow():
-    global clickanimation,screen1,screen2,switch,now,score,combo,counter,copyarr
+    global clickanimation,screen1,screen2,switch,now,score,combo,counter,copyarr,songname1,input1,songselect
     fps = font1.render('FPS:' + str(int(clock.get_fps())),True,(0,0,0))
     if screen1:
         #切換畫面
@@ -221,6 +226,8 @@ def redrawGameWindow():
         win.blit(intro4,(125,250))
         win.blit(start,(1050,500))
         win.blit(end,(10,585))
+        win.blit(songname1,(150,675))
+        win.blit(selectright,(960,675))
         #按鍵動畫
         if clickanimation:
             for i in range(30):
@@ -234,6 +241,8 @@ def redrawGameWindow():
                 win.blit(intro4,(125,250))
                 win.blit(start,(1050,500))
                 win.blit(end,(10,585))
+                win.blit(songname1,(150,675))
+                win.blit(selectright,(960,675))
                 win.blit(click[i % 30],(pygame.mouse.get_pos()[0] - 400,pygame.mouse.get_pos()[1] - 400))
                 pygame.display.update()
         
@@ -272,6 +281,8 @@ def redrawGameWindow():
         if switch:
             switch = False
             playmusic('transfer.mp3',False,0.7)
+            data = (input1,score,songselect) #寫入資料庫
+            db.db.writerecord(data)
         printscore = chinese3.render(str(score),True,(100,100,100))
         printcombo = chinese3.render(str(combo),True,(100,100,100))
         win.blit(bg2,(0,0))
@@ -309,6 +320,7 @@ def playmusic(musicname,songbase,volume):
         filename = sound_base_path + musicname
     else:
         filename = song_base_path + musicname
+    pygame.mixer.music.fadeout(2000)
     pygame.time.delay(2000)
     pygame.mixer.quit()
     mp3 = mutagen.mp3.MP3(filename)
@@ -359,7 +371,7 @@ class que(threading.Thread):
                 screen2 = False
                 screen3 = True
                 switch = True
-                pygame.mixer.music.fadeout(3000)
+                #pygame.mixer.music.fadeout(3000)
                 self.running.clear()
             tmp = time.time() - now
             if copyarr != [] and tmp >= copyarr[0]:
@@ -378,7 +390,9 @@ def main(inputsong,username):
     #輸入歌曲
     print(inputsong)
     print(username)
-    global run,clickanimation,switch,left,right,charactermul,screen1,screen2,screen3,start,end,retry,score,touchflag
+    global run,clickanimation,switch,left,right,charactermul,screen1,screen2,screen3,start,end,retry \
+    ,score,touchflag,selectright,songindex,songname1,songselect,song_base_path,bg1,songname,input1
+    input1 = username
     initgame()
     pygamedef(inputsong)
     picturedef()
@@ -403,7 +417,7 @@ def main(inputsong,username):
                 clickanimation = True
             else:
                 clickanimation = False
-            if detectCollisions(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],8,8,10,585,104,65):
+            if detectCollisions(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],8,8,10,585,104,65): #結束
                 if touchflag == False:
                     touchflag =True
                     menutouch.play()
@@ -411,7 +425,23 @@ def main(inputsong,username):
                 if mousep[0] == True:
                     pygame.mixer.music.fadeout(2000)
                     run = False
-            elif detectCollisions(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],8,8,1050,500,208,134):
+            elif detectCollisions(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],8,8,960,675,60,30):#換歌
+                if touchflag == False:
+                    touchflag =True
+                    menutouch.play()
+                selectright = pygame.transform.scale(pygame.image.load(img_base_path + 'selectright.png'),(70,40)).convert_alpha()
+                if mousep[0] == True:
+                    songindex+=1
+                    if songindex > len(songlist) - 1:
+                        songindex = 0
+                    songselect = songlist[songindex]
+                    songname1 = chinese.render('Song Select: ' + songselect,True,(0,0,0))
+                    songname = chinese.render(songselect,True,(225,225,225))
+                    song_base_path = os.getcwd() + '/song/' + songselect + '/'
+                    bg1 = pygame.transform.scale(pygame.image.load(song_base_path + 'bg1.jpg'),(WIN_WIDTH,WIN_HEIGHT)).convert_alpha()
+                    playmusic('audio.mp3',True,0.5)
+                    general()
+            elif detectCollisions(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],8,8,1050,500,208,134):#開始
                 if touchflag == False:
                     touchflag = True
                     menutouch.play()
@@ -428,6 +458,8 @@ def main(inputsong,username):
                         win.blit(intro4,(125,250))
                         win.blit(start,(1050,500))
                         win.blit(end,(10,585))
+                        win.blit(songname1,(150,675))
+                        win.blit(selectright,(960,675))
                         win.blit(click[i % 30],(pygame.mouse.get_pos()[0] - 400,pygame.mouse.get_pos()[1] - 400))
                         pygame.display.update()
                     clickanimation = False
@@ -435,12 +467,13 @@ def main(inputsong,username):
                     screen2 = True
                     screen3 = False
                     switch = True
-                    pygame.mixer.music.fadeout(2000)
+                    #pygame.mixer.music.fadeout(2000)
                     
             else:
                 touchflag = False
                 end = pygame.transform.scale(pygame.image.load(img_base_path + 'end.png'),(104,65)).convert_alpha()
                 start = pygame.image.load(img_base_path + 'start.png').convert_alpha()
+                selectright = pygame.image.load(img_base_path + 'selectright.png').convert_alpha()
         #遊戲中
         elif screen2 == True:
             if keys[pygame.K_LEFT]:
@@ -493,7 +526,7 @@ def main(inputsong,username):
                     screen2 = False
                     screen3 = False
                     switch = True
-                    pygame.mixer.music.fadeout(2000)
+                    #pygame.mixer.music.fadeout(2000)
             else:
                 retry = pygame.image.load(img_base_path + 'pause-retry.png').convert_alpha()
                 touchflag = False
@@ -502,4 +535,4 @@ def main(inputsong,username):
         redrawGameWindow()        
     pygame.quit()
 if __name__ == "__main__":
-    main('','')
+    main('LiSA - unlasting (TV Size)','Kuanmin')

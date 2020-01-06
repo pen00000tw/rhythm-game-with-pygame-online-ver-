@@ -6,7 +6,8 @@ import login
 import game
 from PIL import Image, ImageTk
 import os
-
+import rank
+import record
 class SelectWindow:
     def __init__(self):
         self.win = Tk()
@@ -54,11 +55,23 @@ class SelectWindow:
         self.button.place(x = 125,y=y+255)
         self.button1 = Button(self.frame, text = "多人遊戲",font="微軟正黑體 15 bold")
         self.button1.place(x = 225, y=y+255)
+        self.button2 = Button(self.frame, text = "分數排行",font="微軟正黑體 15 bold",command=self.rank)
+        self.button2.place(x = 125, y=y+300)
+        self.button3 = Button(self.frame, text = "遊玩紀錄",font="微軟正黑體 15 bold",command=self.record)
+        self.button3.place(x = 225, y=y+300)
         self.win.mainloop()
     def single(self):
         self.songname = self.com.get()
         self.win.destroy()
         game.main(self.songname,self.username)
+    def rank(self):
+        self.songname = self.com.get()
+        x = rank.rankWindow(self.songname)
+        x.add_frame()
+    def record(self):
+        x = record.recordWindow(self.username)
+        x.add_frame()
+
 
 
 
