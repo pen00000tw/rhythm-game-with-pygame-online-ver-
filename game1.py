@@ -280,8 +280,8 @@ def redrawGameWindow():
         win.blit(bg1,(0,0))
         win.blit(text,(25,25)) #繪製分數
         win.blit(text1,(25,100))
-        win.blit(another,(800,25))
-        win.blit(another1,(800,100))
+        win.blit(another,(700,25))
+        win.blit(another1,(700,100))
         win.blit(fps,(1150,0))
         group.draw(win)
         group1.draw(win)
@@ -403,7 +403,7 @@ class multiplayers(threading.Thread):
                     switch = True
             if screen2 == True:
                 a = str(score) + ',' + str(combo)
-                tmp = n.send(n.send(a)).split(',')
+                tmp = n.send(a).split(',')
                 if len(tmp) > 1:
                     anotherscore = tmp[0]
                     anothercombo = tmp[1]

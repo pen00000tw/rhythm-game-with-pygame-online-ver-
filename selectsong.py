@@ -3,7 +3,7 @@ from tkinter import messagebox
 from tkinter import ttk
 import db.db
 import login
-import game
+import game,game1
 from PIL import Image, ImageTk
 import os
 import rank
@@ -53,7 +53,7 @@ class SelectWindow:
 
         self.button = Button(self.frame, text = "單人遊戲",font='微軟正黑體 15 bold',command=self.single)
         self.button.place(x = 125,y=y+255)
-        self.button1 = Button(self.frame, text = "多人遊戲",font="微軟正黑體 15 bold")
+        self.button1 = Button(self.frame, text = "多人遊戲",font="微軟正黑體 15 bold",command=self.multi)
         self.button1.place(x = 225, y=y+255)
         self.button2 = Button(self.frame, text = "分數排行",font="微軟正黑體 15 bold",command=self.rank)
         self.button2.place(x = 125, y=y+300)
@@ -64,6 +64,10 @@ class SelectWindow:
         self.songname = self.com.get()
         self.win.destroy()
         game.main(self.songname,self.username)
+    def multi(self):
+        self.songname = self.com.get()
+        self.win.destroy()
+        game1.main(self.songname,self.username)
     def rank(self):
         self.songname = self.com.get()
         x = rank.rankWindow(self.songname)
