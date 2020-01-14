@@ -62,11 +62,11 @@ class SelectWindow:
         self.win.mainloop()
     def single(self):
         self.songname = self.com.get()
-        #self.win.destroy()
+        self.win.destroy()
         game.main(self.songname,self.username)
     def multi(self):
         self.songname = self.com.get()
-        #self.win.destroy()
+        self.win.destroy()
         game1.main(self.songname,self.username)
     def rank(self):
         self.songname = self.com.get()
